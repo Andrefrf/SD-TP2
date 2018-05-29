@@ -1,0 +1,9 @@
+namenode-mainclass=sys.storage.NamenodeRest
+namenode-port=9981
+datanode-mainclass=sys.storage.DatanodeRest
+datanode-port=9991
+computenode-mainclass=sys.mapreduce.ComputeNodeImpl
+computenode-port=9999
+blobstorage-class=sys.storage.RemoteBlobStorage
+discovery-multicast-address=224.10.10.10:6665
+datanode-gc-timeout=120
