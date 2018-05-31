@@ -10,13 +10,11 @@ then
 		exit 1
 fi 
 
-LOGS=$(pwd)/logs/
-mkdir -p $LOGS
-
-docker pull smduarte/sd18-tp1-tester
+#update the images, in particular the tester 
+docker pull smduarte/sd18-tp2-openjdk8
+docker pull smduarte/sd18-tp2-tester
+docker pull smduarte/sd18-tp2-tester-base
 
 #execute the client with the given command line parameters
-docker run --network=sd-net -it -v $LOGS:/logs/ -v /var/run/docker.sock:/var/run/docker.sock smduarte/sd18-tp1-tester:latest $*
+docker run --network=sd-net -it -v /var/run/docker.sock:/var/run/docker.sock smduarte/sd18-tp2-tester:latest $*
 
-#pull the logs to the host
-echo "Container logs:" $LOGS

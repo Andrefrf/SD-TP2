@@ -1,6 +1,7 @@
 package sys.storage;
 
 import java.net.URI;
+import javax.net.ssl.SSLSession;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,7 +31,7 @@ public class DatanodeClient implements Datanode {
 	public DatanodeClient(String location) {
 		ClientConfig config = new ClientConfig();
 		configureClinet(config);
-		client = ClientBuilder.newClient(config);
+		Client client = ClientBuilder.newBuilder().hostnameVerifier((String hostname, SSLSession cts) -> true).build();
 		baseURI = UriBuilder.fromUri(location).build();
 	}
 
