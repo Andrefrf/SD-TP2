@@ -12,24 +12,24 @@ blobstorage-class=sys.storage.rest.RestBlobStorage
 
 discovery-multicast-address=226.226.226.226:3333
 
-namenode-keystore=/home/sd2018/namenode.jks
+namenode-keystore=/home/sd2018/Desktop/sd/SD-TP2/tls/namenode.jks
 namenode-keystore-password=namenode
 namenode-truststore=/home/sd2018/namenode-ts.jks
-namenode-truststore-password=namenode-ts
+namenode-truststore-password=namenode
 
-datanode-keystore=/home/sd2018/datanode.jks
+datanode-keystore=/home/sd2018/Desktop/sd/SD-TP2/tls/datanode.jks
 datanode-keystore-password=datanode
 datanode-truststore=/home/sd2018/datanode-ts.jks
-datanode-truststore-password=datanode-ts
+datanode-truststore-password=datanode
 
-blobstorage-keystore=/home/sd2018/blobstorage.jks
+blobstorage-keystore=/home/sd2018/Desktop/sd/SD-TP2/tls/blobstorage.jks
 blobstorage-keystore-password=blobstorage
 blobstorage-truststore=/home/sd2018/blobstorage-ts.jks
-blobstorage-truststore-password=blobstorage-ts
+blobstorage-truststore-password=blobstorage
 
-dropbox-app-key=<your-app-key>
-dropbox-app-secret=<your-app-secret>
-dropbox-access-token=<your-access-token>
+dropbox-app-key=3alfbzzm7k7igae
+dropbox-app-secret=fo890efedbyi2s3
+dropbox-access-token=oPYGpkJu1cUAAAAAAAAH6JoGsvy95Wse2Ryuqu0HOIIMl8GzatSj8-n8CcshVOCU
 dropbox-datanode-folder=/Datanode
 dropbox-datanode-server-mainclass=sys.storage.rest.datanode.dropbox.DropboxDatanodeServer
 dropbox-datanode-server-port=9999

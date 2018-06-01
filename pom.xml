@@ -48,7 +48,7 @@
 							<goal>build</goal>
 						</goals>
 						<configuration>
-							<imageName>sd18-tp2-base-XXXXX-YYYYY</imageName>
+							<imageName>sd18-tp2-base-45242</imageName>
 							<baseImage>smduarte/sd18-tp2-openjdk8:latest</baseImage>
 							<entryPoint>[]</entryPoint>
 							<resources>
@@ -82,8 +82,8 @@
 							<goal>build</goal>
 						</goals>
 						<configuration>
-							<imageName>sd18-tp2-XXXXX-YYYYY</imageName>
-							<baseImage>sd18-tp2-base-XXXXX-YYYYY</baseImage>
+							<imageName>sd18-tp2-45242</imageName>
+							<baseImage>sd18-tp2-base-45242</baseImage>
 							<resources>
 								<resource>
 									<targetPath>/home/sd</targetPath>
