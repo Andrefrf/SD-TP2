@@ -1,30 +1,30 @@
-namenode-mainclass=sys.storage.rest.namenode.NamenodeServer
-namenode-port=7777
+namenode-mainclass=sys.storage.NamenodeRest
+namenode-port=9981
 
-datanode-mainclass=sys.storage.rest.datanode.DatanodeServer
-datanode-port=9999
+datanode-mainclass=sys.storage.DatanodeRest
+datanode-port=9991
 datanode-folder=/Datanode
 
-computenode-mainclass=sys.mapreduce.ComputeNodeServer
+computenode-mainclass=sys.mapreduce.ComputeNodeImpl
 computenode-port=6666
 
-blobstorage-class=sys.storage.rest.RestBlobStorage
+blobstorage-class=sys.storage.RemoteBlobStorage
 
-discovery-multicast-address=226.226.226.226:3333
+discovery-multicast-address=224.10.10.10:6665
 
-namenode-keystore=/home/sd2018/Desktop/sd/SD-TP2/tls/namenode.jks
+namenode-keystore=/home/sd/namenode.jks
 namenode-keystore-password=namenode
-namenode-truststore=/home/sd2018/namenode-ts.jks
+namenode-truststore=/home/sd/namenode-ts.jks
 namenode-truststore-password=namenode
 
-datanode-keystore=/home/sd2018/Desktop/sd/SD-TP2/tls/datanode.jks
+datanode-keystore=/home/sd/datanode.jks
 datanode-keystore-password=datanode
-datanode-truststore=/home/sd2018/datanode-ts.jks
+datanode-truststore=/home/sd/datanode-ts.jks
 datanode-truststore-password=datanode
 
-blobstorage-keystore=/home/sd2018/Desktop/sd/SD-TP2/tls/blobstorage.jks
+blobstorage-keystore=/home/sd/blobstorage.jks
 blobstorage-keystore-password=blobstorage
-blobstorage-truststore=/home/sd2018/blobstorage-ts.jks
+blobstorage-truststore=/home/sd/blobstorage-ts.jks
 blobstorage-truststore-password=blobstorage
 
 dropbox-app-key=3alfbzzm7k7igae
