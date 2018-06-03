@@ -19,8 +19,15 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.collections4.Trie;
 import org.apache.commons.collections4.trie.PatriciaTrie;
+import org.bson.Document;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 
 import api.storage.Datanode;
 import api.storage.Namenode;
@@ -34,6 +41,7 @@ public class NamenodeRest implements Namenode {
 	private static Logger logger = Logger.getLogger(NamenodeClient.class.toString());
 
 	Trie<String, List<String>> names = new PatriciaTrie<>();
+	MongoCollection<Document> table;
 
 	Map<String, Datanode> datanodes;
 	
@@ -49,9 +57,21 @@ public class NamenodeRest implements Namenode {
 					String[] datanodeNames = ServiceDiscovery.multicastSend(ServiceDiscovery.DATANODE_SERVICE_NAME);
 					if(datanodeNames != null) {
 						for(String datanode: datanodeNames) {
-							if(!datanodes.containsKey(datanode)) {
-								logger.info("New Datanode discovered: " + datanode);
-								datanodes.put(datanode, new DatanodeClient(datanode));
+							MongoClientURI uri = new MongoClientURI("mongodb://mongo1,mongo2,mongo3/?w=2&readPreference=secondary");	
+							try(MongoClient mongo = new MongoClient(uri)){
+								MongoDatabase db = mongo.getDatabase("testDB");
+								table=db.getCollection("col");
+								
+								if(!datanodes.containsKey(datanode)) {
+									logger.info("New Datanode discovered: " + datanode);
+									
+									//datanodes.put(datanode, new DatanodeClient(datanode));
+									
+									Document doc = new Document();
+									doc.put(datanode, new DatanodeClient(datanode));
+									table.insertOne(doc);
+									
+								}
 							}
 						}
 					}
@@ -70,6 +90,7 @@ public class NamenodeRest implements Namenode {
 	
 	@Override
 	public synchronized List<String> list(String prefix) {
+		
 		return new ArrayList<>(names.prefixMap(prefix).keySet());
 	}
 
@@ -79,10 +100,14 @@ public class NamenodeRest implements Namenode {
 			logger.info("Namenode create CONFLICT");
 			throw new WebApplicationException( Status.CONFLICT );
 		} else {
+			Document doc = new Document();
+			doc.put("Name", name);
 			//Remember the blocks that were added as part of the blob
 			for(String block: blocks) {
 				registeredBlocks.add(block);
+				doc.put("Block", block);
 			}
+			table.insertOne(doc);
 		}
 	}
 
@@ -96,6 +121,7 @@ public class NamenodeRest implements Namenode {
 				for(String block: removedBlocks) {
 					registeredBlocks.remove(block);
 				}
+				table.deleteOne(Filters.eq("Name",key));
 			}
 		else {
 			logger.info("Namenode delete NOT FOUND");
@@ -107,6 +133,8 @@ public class NamenodeRest implements Namenode {
 	public synchronized void update(String name, List<String> blocks) {
 		if(names.containsKey(name)) {
 			List<String> oldBlocks = names.put(name, blocks);
+			Document doc = new Document();
+			doc.put("Name", name);
 			//Blocks that were removed as part of this update are forgotten
 			for(String block: oldBlocks) {
 				if(!blocks.contains(block)) {
@@ -117,8 +145,10 @@ public class NamenodeRest implements Namenode {
 			for(String block: blocks) {
 				if(!oldBlocks.contains(block)) {
 					registeredBlocks.add(block);
+					doc.put("Block", block);
 				}
 			}
+			table.findOneAndUpdate(Filters.eq("Name",name), doc);
 		} else {
 			logger.info("Namenode update NOT FOUND");
 			throw new WebApplicationException( Status.NOT_FOUND );
