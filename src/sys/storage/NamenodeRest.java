@@ -23,6 +23,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -76,32 +77,36 @@ public class NamenodeRest implements Namenode {
 
 	@Override
 	public synchronized List<String> list(String prefix) {
-		return new ArrayList<>();
+		Pattern regex = Pattern.compile("(^" + prefix + ")");
+		ArrayList<String> res = new ArrayList<>();
+		for (Document d : table.find(Filters.eq("_id", regex))) {
+			String h = d.getString("_id");
+			res.add(h);
+			System.out.println(h);
+		}
+		return res;
 	}
 
 	@Override
 	public synchronized void create(String name, List<String> blocks) {
 		Document doc = new Document();
-		doc.put("Name", name);
+		doc.put("_id", name);
 		doc.put("Blocks", blocks);
-		Document serch = new Document();
-		serch.put("Name", name);
-		for (Document d : table.find(serch)) {
-			if (d != null) {
-				logger.info("Namenode create CONFLICT");
-				throw new WebApplicationException(Status.CONFLICT);
-			}
+		try {
+			table.insertOne(doc);
+		} catch (Exception e) {
+			throw new WebApplicationException(Status.CONFLICT);
 		}
-		table.insertOne(doc);
 	}
 
 	@Override
 	public synchronized void delete(String prefix) {
-		Pattern regex = Pattern.compile(prefix);
-		Iterable<Document> docs = table.find(Filters.eq(regex));
-		if (docs != null) {
-			table.deleteMany(Filters.eq(regex));
-		} else {
+		Pattern regex = Pattern.compile("(^" + prefix + ")");
+		try {
+			for (Document d : table.find(Filters.eq("_id", regex))) {
+				table.findOneAndDelete(d);
+			}
+		} catch (Exception e) {
 			logger.info("Namenode delete NOT FOUND");
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
@@ -109,12 +114,13 @@ public class NamenodeRest implements Namenode {
 
 	@Override
 	public synchronized void update(String name, List<String> blocks) {
-		if (table.find(Filters.eq("Name", name)) != null) {
+		try {
 			Document doc = new Document();
-			doc.put("Name", name);
-			doc.put("Blocks", blocks);
-			table.updateOne(Filters.eq("Name", name), doc);
-		} else {
+		doc.put("_id", name);
+		doc.put("Blocks", blocks);
+			table.findOneAndUpdate(Filters.eq("_id", name), doc);
+		}
+		catch(Exception e) {
 			logger.info("Namenode update NOT FOUND");
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
@@ -122,8 +128,8 @@ public class NamenodeRest implements Namenode {
 
 	@Override
 	public synchronized List<String> read(String name) {
-		Document doc = table.find(Filters.eq("Name", name)).first();
-		return null;
+		Document doc = table.find(Filters.eq("_id", name)).first();
+		return (List<String>) doc.get("Blocks");
 	}
 
 	public static void main(String[] args) throws UnknownHostException, URISyntaxException, NoSuchAlgorithmException {
@@ -134,21 +140,21 @@ public class NamenodeRest implements Namenode {
 			MongoDatabase db = mongo.getDatabase("testDB");
 
 			table = db.getCollection("col");
-		}
 
-		System.setProperty("java.net.preferIPv4Stack", "true");
-		String port = NAMENODE_PORT_DEFAULT;
-		if (args.length > 0 && args[0] != null) {
-			port = args[0];
-		}
-		String URI_BASE = "https://0.0.0.0:" + port + "/";
-		String myAddress = "https://" + IP.hostAddress() + ":" + port;
-		ResourceConfig config = new ResourceConfig();
-		config.register(new NamenodeRest());
-		JdkHttpServerFactory.createHttpServer(URI.create(URI_BASE), config, SSLContext.getDefault());
+			System.setProperty("java.net.preferIPv4Stack", "true");
+			String port = NAMENODE_PORT_DEFAULT;
+			if (args.length > 0 && args[0] != null) {
+				port = args[0];
+			}
+			String URI_BASE = "https://0.0.0.0:" + port + "/";
+			String myAddress = "https://" + IP.hostAddress() + ":" + port;
+			ResourceConfig config = new ResourceConfig();
+			config.register(new NamenodeRest());
+			JdkHttpServerFactory.createHttpServer(URI.create(URI_BASE), config, SSLContext.getDefault());
 
-		System.err.println("Namenode ready....");
-		ServiceDiscovery.multicastReceive(ServiceDiscovery.NAMENODE_SERVICE_NAME, myAddress + "/");
+			System.err.println("Namenode ready....");
+			ServiceDiscovery.multicastReceive(ServiceDiscovery.NAMENODE_SERVICE_NAME, myAddress + "/");
+		}
 	}
 
 }
