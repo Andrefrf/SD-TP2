@@ -12,6 +12,7 @@ import javax.net.ssl.SSLContext;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.kafka.common.utils.Utils;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -20,6 +21,8 @@ import utils.IP;
 import utils.ServiceDiscovery;
 
 public class DatanodeRest implements Datanode {
+
+	private static final String IS_CORRUPTED_STRING = "<<<CORRUPTED BLOCK>>>";
 
 	private static final String DATANODE_PORT_DEFAULT = "9991";
 
@@ -38,7 +41,8 @@ public class DatanodeRest implements Datanode {
 		String blockId = null;
 		while (true) {
 			try {
-				blockId = utils.Random.key64(); // Generates a random id for the block
+				blockId= utils.Random.key64();
+				//blockId = utils.Hash.md5(data).toString(); // Generates a random id for the block
 				if (BlockIO.writeBlock(blockId, data)) // Stores the block in a file (false if the file already exists)
 					break;
 			} catch (IOException e) {
@@ -63,6 +67,9 @@ public class DatanodeRest implements Datanode {
 	public byte[] readBlock(String block) {
 		logger.log(Level.FINE, String.format("Reading block with id %s.", block));
 		byte[] data = BlockIO.readBlock(block); // Reads block from the disk (null if the file is not found)
+//		if(!block.equals(utils.Hash.md5(data))) {
+//			return IS_CORRUPTED_STRING.getBytes();
+//		}
 		if (data == null) {
 			logger.log(Level.INFO, String.format("Couldn't find block %s", block));
 			throw new WebApplicationException(Status.NOT_FOUND); // Sends 404

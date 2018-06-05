@@ -56,14 +56,14 @@ public class DatanodeDropboxResources implements Datanode {
         OAuthRequest createBlock = new OAuthRequest(Verb.POST, DROPBOX_UPLOAD_FILE);
         createBlock.addHeader(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
         String s = JSON.encode(new UploadDropArgs(PATH + ID));
-        System.out.println(s);
+        System.out.println("Encoded argument: " +s);
         createBlock.addHeader(DROPBOX_API_ARG, s);
         createBlock.setPayload(data);
 
         service.signRequest(accessToken, createBlock);
         try {
             Response r = service.execute(createBlock);
-            System.out.println(r);
+            System.out.println("Response:" + r);
 
             if (r.getCode() == CONFLICT) {
                 throw new WebApplicationException(Status.NOT_FOUND);
@@ -91,7 +91,7 @@ public class DatanodeDropboxResources implements Datanode {
         service.signRequest(accessToken, deleteBlock);
         try {
             Response r = service.execute(deleteBlock);
-            System.out.println(r);
+            System.out.println("Response:" + r);
 
             if (r.getCode() == CONFLICT) {
                 throw new WebApplicationException(Status.NOT_FOUND);
@@ -114,7 +114,7 @@ public class DatanodeDropboxResources implements Datanode {
         service.signRequest(accessToken, readBlock);
         try {
             Response r = service.execute(readBlock);
-            System.out.println(r);
+            System.out.println("Response:" + r);
 
             if (r.getCode() == CONFLICT) {
                 throw new WebApplicationException(Status.NOT_FOUND);

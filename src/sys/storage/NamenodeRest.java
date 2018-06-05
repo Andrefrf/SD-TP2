@@ -41,6 +41,8 @@ public class NamenodeRest implements Namenode {
 
 	private static Logger logger = Logger.getLogger(NamenodeClient.class.toString());
 
+	static Producer<String, String> producer;
+	
 	static MongoCollection<Document> table;
 
 	Map<String, Datanode> datanodes;
@@ -93,7 +95,6 @@ public class NamenodeRest implements Namenode {
 		doc.put("_id", name);
 		doc.put("Blocks", blocks);
 		try {
-			
 			table.insertOne(doc);
 		} catch (Exception e) {
 			throw new WebApplicationException(Status.CONFLICT);
@@ -145,10 +146,9 @@ public class NamenodeRest implements Namenode {
 
 		MongoClientURI uri = new MongoClientURI("mongodb://mongo1,mongo2,mongo3/?w=2&readPreference=secondary");
 		try (MongoClient mongo = new MongoClient(uri)) {
-			try (Producer<String, String> producer = new KafkaProducer<>(props)) {
-
+			
+				
 				MongoDatabase db = mongo.getDatabase("testDB");
-
 				table = db.getCollection("col");
 
 				System.setProperty("java.net.preferIPv4Stack", "true");
@@ -164,7 +164,6 @@ public class NamenodeRest implements Namenode {
 
 				System.err.println("Namenode ready....");
 				ServiceDiscovery.multicastReceive(ServiceDiscovery.NAMENODE_SERVICE_NAME, myAddress + "/");
-			}
 		}
 	}
 
