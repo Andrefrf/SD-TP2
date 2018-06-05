@@ -9,7 +9,7 @@ public class CreateFileArgs {
 	public CreateFileArgs(String path) {
 		this.path = path;
 		this.mode = "add";
-		this.autorename = false;
+		this.autorename = true;
 		this.mute = false;
 	}
 }

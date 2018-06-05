@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -32,14 +33,13 @@ import api.storage.Datanode;
 import api.storage.Namenode;
 import utils.IP;
 import utils.ServiceDiscovery;
+import org.apache.kafka.clients.producer.*;
 
 public class NamenodeRest implements Namenode {
 
 	private static final String NAMENODE_PORT_DEFAULT = "9981";
 
 	private static Logger logger = Logger.getLogger(NamenodeClient.class.toString());
-
-	// Trie<String, List<String>> names = new PatriciaTrie<>();
 
 	static MongoCollection<Document> table;
 
@@ -93,6 +93,7 @@ public class NamenodeRest implements Namenode {
 		doc.put("_id", name);
 		doc.put("Blocks", blocks);
 		try {
+			
 			table.insertOne(doc);
 		} catch (Exception e) {
 			throw new WebApplicationException(Status.CONFLICT);
@@ -102,11 +103,11 @@ public class NamenodeRest implements Namenode {
 	@Override
 	public synchronized void delete(String prefix) {
 		Pattern regex = Pattern.compile("(^" + prefix + ")");
-		try {
+		if (table.find(Filters.eq("_id", regex)).first() != null) {
 			for (Document d : table.find(Filters.eq("_id", regex))) {
 				table.findOneAndDelete(d);
 			}
-		} catch (Exception e) {
+		} else {
 			logger.info("Namenode delete NOT FOUND");
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
@@ -116,11 +117,10 @@ public class NamenodeRest implements Namenode {
 	public synchronized void update(String name, List<String> blocks) {
 		try {
 			Document doc = new Document();
-		doc.put("_id", name);
-		doc.put("Blocks", blocks);
+			doc.put("_id", name);
+			doc.put("Blocks", blocks);
 			table.findOneAndUpdate(Filters.eq("_id", name), doc);
-		}
-		catch(Exception e) {
+		} catch (Exception e) {
 			logger.info("Namenode update NOT FOUND");
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
@@ -133,27 +133,38 @@ public class NamenodeRest implements Namenode {
 	}
 
 	public static void main(String[] args) throws UnknownHostException, URISyntaxException, NoSuchAlgorithmException {
+		Properties props = new Properties();
+
+		// Localização dos servidores kafka (lista de máquinas + porto)
+		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka1:9092,kafka2:9092,kafka3:9092");
+
+		// Classe para serializar as chaves dos eventos (string)
+		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+				"org.apache.kafka.common.serialization.StringSerializer");
 
 		MongoClientURI uri = new MongoClientURI("mongodb://mongo1,mongo2,mongo3/?w=2&readPreference=secondary");
 		try (MongoClient mongo = new MongoClient(uri)) {
+			try (Producer<String, String> producer = new KafkaProducer<>(props)) {
 
-			MongoDatabase db = mongo.getDatabase("testDB");
+				MongoDatabase db = mongo.getDatabase("testDB");
 
-			table = db.getCollection("col");
+				table = db.getCollection("col");
 
-			System.setProperty("java.net.preferIPv4Stack", "true");
-			String port = NAMENODE_PORT_DEFAULT;
-			if (args.length > 0 && args[0] != null) {
-				port = args[0];
+				System.setProperty("java.net.preferIPv4Stack", "true");
+				String port = NAMENODE_PORT_DEFAULT;
+				if (args.length > 0 && args[0] != null) {
+					port = args[0];
+				}
+				String URI_BASE = "https://0.0.0.0:" + port + "/";
+				String myAddress = "https://" + IP.hostAddress() + ":" + port;
+				ResourceConfig config = new ResourceConfig();
+				config.register(new NamenodeRest());
+				JdkHttpServerFactory.createHttpServer(URI.create(URI_BASE), config, SSLContext.getDefault());
+
+				System.err.println("Namenode ready....");
+				ServiceDiscovery.multicastReceive(ServiceDiscovery.NAMENODE_SERVICE_NAME, myAddress + "/");
 			}
-			String URI_BASE = "https://0.0.0.0:" + port + "/";
-			String myAddress = "https://" + IP.hostAddress() + ":" + port;
-			ResourceConfig config = new ResourceConfig();
-			config.register(new NamenodeRest());
-			JdkHttpServerFactory.createHttpServer(URI.create(URI_BASE), config, SSLContext.getDefault());
-
-			System.err.println("Namenode ready....");
-			ServiceDiscovery.multicastReceive(ServiceDiscovery.NAMENODE_SERVICE_NAME, myAddress + "/");
 		}
 	}
 

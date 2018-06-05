@@ -31,7 +31,7 @@ public class DatanodeClient implements Datanode {
 	public DatanodeClient(String location) {
 		ClientConfig config = new ClientConfig();
 		configureClinet(config);
-		Client client = ClientBuilder.newBuilder().hostnameVerifier((String hostname, SSLSession cts) -> true).build();
+		client = ClientBuilder.newBuilder().hostnameVerifier((String hostname, SSLSession cts) -> true).build();
 		baseURI = UriBuilder.fromUri(location).build();
 	}
 
